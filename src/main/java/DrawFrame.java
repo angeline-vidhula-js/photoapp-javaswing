@@ -10,6 +10,7 @@ import java.awt.event.ComponentEvent;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -52,6 +53,12 @@ public class DrawFrame extends JFrame {
             return (false);
         }
     };
+
+	
+	ArrayList<File> allImgFiles = new ArrayList<>();
+	JLabel label = new JLabel();
+	JScrollPane scroller = new JScrollPane(label); 
+	JMenuItem impor = new JMenuItem("Import");
 	
 	public DrawFrame() {
 	
@@ -62,7 +69,6 @@ public class DrawFrame extends JFrame {
 		JMenuBar menuBar = new JMenuBar();
 		JMenu file = new JMenu("File");    
 		menuBar.add(file);
-		JMenuItem impor = new JMenuItem("Import");
 		file.add(impor);
 		impor.putClientProperty( "page", false);
 		JMenuItem dele = new JMenuItem("Delete");
@@ -76,8 +82,6 @@ public class DrawFrame extends JFrame {
 		JMenuItem grid = new JMenuItem("Grid");
 		view.add(grid);
 		this.setJMenuBar(menuBar);
-		
-		ArrayList<File> allImgFiles = new ArrayList<>();
 		 
 		
 		
@@ -94,8 +98,7 @@ public class DrawFrame extends JFrame {
         bgroup.add(nex);
         bgroup.add(del);
         
-        //bgroup.setBorder(new CompoundBorder(new TitledBorder(""), new EmptyBorder(5, 0, 5, 0)));
-        //bgroup.setLayout(new BoxLayout (bgroup, BoxLayout.X_AXIS));
+       
         
         bgroup.setAlignmentX(Component.CENTER_ALIGNMENT);
         
@@ -147,22 +150,19 @@ public class DrawFrame extends JFrame {
 		this.add(BorderLayout.LINE_START, tools);
 		
 		
-//		ImageIcon image = new ImageIcon("/Users/angelinevidhulajeyachandra/Documents/Photos/jason.jpg");
-		JLabel label = new JLabel();
+
+		
 		label.setHorizontalAlignment(JLabel.CENTER);
 		label.putClientProperty("filesExist", false);
 		
-		JScrollPane scroller = new JScrollPane(label); 
 		this.add(BorderLayout.CENTER, scroller);
-//		Image scaled= image.getImage().getScaledInstance(-1, this.getSize().height, Image.SCALE_SMOOTH);
-//		label.setIcon(new ImageIcon(scaled));
+	
 		
 		
 		
 		scroller.addComponentListener(new ComponentAdapter() {
 		    public void componentResized(ComponentEvent componentEvent) {
-//		        Image scales = image.getImage().getScaledInstance(-1, scroller.getViewport().getSize().height, Image.SCALE_SMOOTH);
-//		        label.setIcon(new ImageIcon(scales));
+		        
 		        if((boolean)label.getClientProperty("filesExist")) {
 		        
 			        int i = (int) label.getClientProperty("index");
@@ -181,38 +181,13 @@ public class DrawFrame extends JFrame {
 		    	int result = fileChooser.showOpenDialog(menuBar);
 		    	if (result == JFileChooser.APPROVE_OPTION) {
 		    		File selectedFile = fileChooser.getSelectedFile();
-		    		boolean exists =      selectedFile.exists();      // Check if the file exists
-		    		boolean isDirectory = selectedFile.isDirectory(); // Check if it's a directory
-		    		boolean isFile =      selectedFile.isFile();      // Check if it's a regular file
-		    	    if(exists) {
-		    	    	if(isDirectory) {
-		    	    		File folder = new File(selectedFile.getAbsolutePath());
-		    	    		//File[] listOfFiles = folder.listFiles();
-		    	    		for (final File f : folder.listFiles(IMAGE_FILTER)) {
-		    	    			allImgFiles.add(f);
-		    	    		
-		    	    		}
-		    	    	} else if(isFile) {
-		    	    		System.out.println("file: "  + selectedFile.getAbsolutePath());
-		    	    		try {
-		    	    		    Image image = ImageIO.read(new File(selectedFile.getAbsolutePath()));
-		    	    		    if (image == null) {
-		    	    		        System.out.println("The file could not be opened , it is not an image");
-		    	    		    } else {
-		    	    		    	allImgFiles.add(new File(selectedFile.getAbsolutePath()));
-		    	    		    }
-		    	    		} catch(IOException ex) {
-		    	    			System.out.println("The file could not be opened , it is not an image");
-		    	    		}
-		    	    	}
-		    	    }
+		    		allImgFiles.addAll(fileAdder(selectedFile));
 		    	}
 
-		    	System.out.println(allImgFiles);
     	    	if(allImgFiles.size() != 0) {
     	    		boolean page = (boolean)((JMenuItem)evt.getSource()).getClientProperty( "page" );
     	    		if(!page) {
-    	    			((JMenuItem)evt.getSource()).putClientProperty( "page" , true);
+    	    			impor.putClientProperty( "page" , true);
     	    			ImageIcon img = new ImageIcon(allImgFiles.get(0).getAbsolutePath());
     	    			Image scales = img.getImage().getScaledInstance(-1, scroller.getViewport().getSize().height, Image.SCALE_SMOOTH);
     			        label.setIcon(new ImageIcon(scales));
@@ -237,6 +212,7 @@ public class DrawFrame extends JFrame {
 				}
 			}
 		});
+		
 		prev.addActionListener(new ActionListener() {
 			public void actionPerformed(java.awt.event.ActionEvent evt) {
 				int picidx = (int) label.getClientProperty("index" );
@@ -256,4 +232,51 @@ public class DrawFrame extends JFrame {
     {
     	return this;
     }
+	
+	public void setDrawFrame(String[] args)
+    {
+    	Path path = Paths.get(args[0]);
+    	if(Files.exists(path)) {
+    		allImgFiles.addAll(fileAdder(new File(args[0])));
+    	}
+			impor.putClientProperty( "page" , true);
+			ImageIcon img = new ImageIcon(allImgFiles.get(0).getAbsolutePath());
+			int height = scroller.getViewport().getSize().height == 0 ? 300 : scroller.getViewport().getSize().height;
+			Image scales = img.getImage().getScaledInstance(-1, height, Image.SCALE_SMOOTH);
+	        label.setIcon(new ImageIcon(scales));
+	        label.putClientProperty("index" , 0);
+		
+		label.putClientProperty("filesExist", true);
+    	
+    }
+	
+	static ArrayList fileAdder (File selectedFile) {
+		ArrayList<File> imgFiles = new ArrayList<>();
+		boolean exists =      selectedFile.exists();      
+		boolean isDirectory = selectedFile.isDirectory(); 
+		boolean isFile =      selectedFile.isFile();      
+	    if(exists) {
+	    	if(isDirectory) {
+	    		File folder = new File(selectedFile.getAbsolutePath());
+	    		
+	    		for (final File f : folder.listFiles(IMAGE_FILTER)) {
+	    			imgFiles.add(f);
+	    		
+	    		}
+	    	} else if(isFile) {
+	    		System.out.println("file: "  + selectedFile.getAbsolutePath());
+	    		try {
+	    		    Image image = ImageIO.read(new File(selectedFile.getAbsolutePath()));
+	    		    if (image == null) {
+	    		        System.out.println("The file could not be opened , it is not an image");
+	    		    } else {
+	    		    	imgFiles.add(new File(selectedFile.getAbsolutePath()));
+	    		    }
+	    		} catch(IOException ex) {
+	    			System.out.println("The file could not be opened , it is not an image");
+	    		}
+	    	}
+	    }
+		return imgFiles;
+	}
 }

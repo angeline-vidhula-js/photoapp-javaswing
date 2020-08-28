@@ -1,9 +1,12 @@
 
+import java.lang.reflect.InvocationTargetException;
+
 import javax.swing.WindowConstants;
 
 public class PhotoApp {
-	private static void FrameCreate() {
+	private static void FrameCreate(String[] args) {
 		DrawFrame frame = new DrawFrame();
+		if(args.length != 0) frame.setDrawFrame(args);
 		
 		frame.setTitle("Photo App");
 		
@@ -13,10 +16,10 @@ public class PhotoApp {
 		frame.setSize(1000, 600);
 		frame.setVisible(true);
 	}
-	public static void main(String[] args) {
-		javax.swing.SwingUtilities.invokeLater(new Runnable() {
+	public static void main(String[] args) throws InvocationTargetException, InterruptedException {
+		javax.swing.SwingUtilities.invokeAndWait(new Runnable() {
 			public void run() {
-					FrameCreate();
+					FrameCreate(args);
 				}
 			});
 	}
